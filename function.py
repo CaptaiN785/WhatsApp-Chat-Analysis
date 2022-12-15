@@ -8,6 +8,7 @@ from collections import Counter
 import warnings
 from wordcloud import WordCloud, STOPWORDS
 warnings.filterwarnings("ignore")
+from datetime import datetime
 
 ## Function to find mobile number and names
 def find_sender(x):
@@ -49,7 +50,7 @@ def data_preprocessing(data):
     df['text'] = df['message'].apply(lambda x : re.split(pattern, x)[1])\
                 .str.replace('\\n','').str.strip().str.lower()
 
-    df.drop(['date','message'], axis=1, inplace=True)
+    df.drop('message', axis=1, inplace=True)
     return df
 
 def member_count(df):
@@ -67,7 +68,9 @@ def emoji_table(df):
             # type: ignore
             if emoji.demojize(c) in emoji_dict:
                 emj.append(c)
-    return dict(Counter(emj).most_common(10))
+    
+    emj = dict(Counter(emj).most_common(10))
+    return pd.DataFrame({'Emoji':emj.keys(), 'Frequency':emj.values()})
 
 def total_links(df):
     pattern = "https?:"
@@ -92,8 +95,28 @@ def create_wordcloud(words):
     return WordCloud(width = 600, height =400,
                 background_color ='white',
                 stopwords = set(STOPWORDS),
-                min_font_size = 10).generate("".join(words))
+                min_font_size = 10).generate(" ".join(words))
 
 def most_freq_words(words):
-    words = [w for w in words if w not in set(STOPWORDS)]
+    words = [w for w in words if w not in set(STOPWORDS) and len(w) > 2]
     return pd.DataFrame(Counter(words).most_common(20), columns=['Words', 'Frequency'])
+
+def busy_month(df):
+    busy_month = df[['year', 'month']].value_counts(sort=False)
+    busy_month_index = sorted(busy_month.index, key=lambda x : datetime.strptime(x[1], "%B"))
+    busy_month_index = sorted(busy_month_index, key=lambda x : x[0])
+    return busy_month[busy_month_index]
+
+def daily_timeline(df):
+    daily_timeline = df['date'].dt.strftime("%Y-%m-%d").value_counts(sort=False)
+    return pd.to_datetime(daily_timeline.index), daily_timeline.values
+
+def most_busy_month(df):
+    return df['month'].value_counts()
+
+def most_busy_week(df):
+    return df['day_name'].value_counts()
+
+def get_spammer(df):
+    spammer = df[(df['text'] == 'this message was deleted') | (df['text'] == 'you deleted this message')]['sender'].value_counts()
+    return spammer.reset_index().rename({"index":"Sender","sender":"Frequency"}, axis=1)

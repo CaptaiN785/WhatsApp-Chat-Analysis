@@ -95,4 +95,5 @@ def create_wordcloud(words):
                 min_font_size = 10).generate("".join(words))
 
 def most_freq_words(words):
+    words = [w for w in words if w not in set(STOPWORDS)]
     return pd.DataFrame(Counter(words).most_common(20), columns=['Words', 'Frequency'])

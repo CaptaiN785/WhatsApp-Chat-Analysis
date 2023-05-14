@@ -6,6 +6,14 @@ import pandas as pd
 ## Plotting color
 color = "indigo"
 
+## Page configuration
+st.set_page_config(
+    page_title="WhatsApp Chat analyzer",
+    page_icon="💾",
+    layout="wide",
+)
+
+
 st.sidebar.title("Whatsapp chat analyzer")
 st.sidebar.warning("This works only on\n12 hour time format.")
 
